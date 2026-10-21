@@ -19,13 +19,23 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Configurar Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Aceitar licencas e instalar NDK/CMake
+      - name: Configurar SDK, licencas, NDK e CMake
+        shell: bash
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platform-tools" "platforms;android-34" "ndk;29.0.14206865" "cmake;3.22.1"
+          set -euo pipefail
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager 2>/dev/null | sort -V | tail -n 1)"
+          if [ -z "$SDKMANAGER" ] || [ ! -x "$SDKMANAGER" ]; then
+            echo "ERRO: sdkmanager executavel nao encontrado em $ANDROID_HOME/cmdline-tools"
+            exit 1
+          fi
+
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "SDKMANAGER=$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-34" "ndk;29.0.14206865" "cmake;3.22.1"
 
       - name: Compilar Lorie
         run: |
