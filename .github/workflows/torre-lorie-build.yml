@@ -1,0 +1,40 @@
+name: Torre Cruz - Lorie Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-lorie:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Aceitar licencas e instalar NDK/CMake
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-34" "ndk;29.0.14206865" "cmake;3.22.1"
+
+      - name: Compilar Lorie
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :lorie-app:assembleSharedUidDebug --no-daemon --stacktrace
+
+      - name: Publicar APK como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: torre-cruz-lorie-sharedUid-debug
+          path: lorie-app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
